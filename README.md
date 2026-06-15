@@ -4,6 +4,9 @@ A Timehop-style page for [CRM Tip of the Day](https://crmtipoftheday.com) — th
 
 Visit the current day's tips at **[crmtimehop.jukkan.com](https://crmtimehop.jukkan.com)**.
 
+<img width="1286" height="1143" alt="image" src="https://github.com/user-attachments/assets/ded0f844-47d6-4c61-b944-12e571f460fd" />
+
+
 ## What it does
 
 Shows every tip ever posted on today's date, grouped by year — "On this day, X years ago…" — with full post content and images. Navigate backwards (and forwards) one day at a time using the toolbar.
