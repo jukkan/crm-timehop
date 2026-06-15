@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Timehop of the Day</title>
+<style>
+  :root {
+    --win-bg:       #ece9d8;
+    --btn-face:     #d4d0c8;
+    --btn-hi:       #ffffff;
+    --btn-sh:       #808080;
+    --btn-dk:       #404040;
+    --crm-navy:     #003366;
+    --crm-blue:     #0055a0;
+    --crm-mid:      #2266bb;
+    --crm-accent:   #66aaff;
+    --crm-link:     #003399;
+    --row-alt:      #eef3fb;
+    --border-light: #c8d0e0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Tahoma, "MS Sans Serif", Arial, sans-serif;
+    font-size: 11px;
+    background: #6b8099 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%235a6e80' opacity='0.4'/%3E%3C/svg%3E");
+    min-height: 100vh;
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* ── Application window ────────────────────────────────── */
+  .app-window {
+    width: 100%;
+    max-width: 860px;
+    background: var(--win-bg);
+    border: 2px solid;
+    border-color: var(--btn-hi) var(--btn-dk) var(--btn-dk) var(--btn-hi);
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Title bar ─────────────────────────────────────────── */
+  .title-bar {
+    background: linear-gradient(90deg, #0a246a 0%, #3a6ea8 60%, #a6b8ce 100%);
+    padding: 3px 4px 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    user-select: none;
+  }
+  .title-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .title-icon { font-size: 13px; flex-shrink: 0; }
+  .win-controls { display: flex; gap: 2px; flex-shrink: 0; }
+  .win-btn {
+    width: 16px; height: 14px;
+    background: var(--btn-face);
+    border: 1px solid;
+    border-color: var(--btn-hi) var(--btn-dk) var(--btn-dk) var(--btn-hi);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: bold; cursor: default; line-height: 1;
+    color: #000;
+  }
+  .win-btn.close { background: #c0504d; color: white; }
+
+  /* ── Menu bar ──────────────────────────────────────────── */
+  .menu-bar {
+    background: var(--win-bg);
+    border-bottom: 1px solid var(--btn-sh);
+    padding: 2px 2px;
+    display: flex;
+  }
+  .menu-item {
+    padding: 2px 8px;
+    cursor: default;
+    color: #000;
+    font-size: 11px;
+  }
+  .menu-item:hover { background: #0a246a; color: white; }
+  .menu-item:first-child { margin-left: 2px; }
+
+  /* ── Toolbar ───────────────────────────────────────────── */
+  .toolbar {
+    background: var(--btn-face);
+    border-bottom: 1px solid var(--btn-sh);
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .tb-btn {
+    padding: 3px 7px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: default;
+    font-size: 11px;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .tb-btn:hover {
+    background: var(--win-bg);
+    border-color: var(--btn-sh) var(--btn-hi) var(--btn-hi) var(--btn-sh);
+  }
+  .tb-sep { width: 1px; height: 20px; background: var(--btn-sh); margin: 0 3px; }
+  .tb-right { margin-left: auto; font-size: 10px; color: #555; padding-right: 4px; }
+
+  /* ── Body layout ───────────────────────────────────────── */
+  .app-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ── Left navigation pane ──────────────────────────────── */
+  .nav-pane {
+    width: 136px;
+    min-width: 136px;
+    background: var(--crm-navy);
+    border-right: 2px solid #001a3a;
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-section-title {
+    background: #001a3a;
+    color: #88b8e0;
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 5px 8px 4px;
+    border-bottom: 1px solid #003060;
+  }
+  .nav-item {
+    color: #b8d4f0;
+    font-size: 11px;
+    padding: 5px 8px 5px 10px;
+    cursor: default;
+    border-bottom: 1px solid #002855;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .nav-item.active {
+    background: var(--crm-blue);
+    color: white;
+    border-left: 3px solid var(--crm-accent);
+    padding-left: 7px;
+  }
+  .nav-item:hover:not(.active) { background: #004488; }
+  .nav-spacer { flex: 1; }
+  .nav-logo {
+    padding: 8px;
+    text-align: center;
+    color: #4477aa;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    border-top: 1px solid #003060;
+    line-height: 1.6;
+  }
+
+  /* ── Content area ──────────────────────────────────────── */
+  .content-area {
+    flex: 1;
+    background: #f0f0f0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 460px;
+    max-height: 80vh;
+  }
+
+  /* ── View header (like CRM list view title bar) ────────── */
+  .view-header {
+    background: linear-gradient(180deg, #3a7abf 0%, #1a5a9f 100%);
+    color: white;
+    padding: 5px 10px;
+    font-weight: bold;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #0a3a7a;
+    flex-shrink: 0;
+  }
+  .view-subtitle { font-size: 10px; font-weight: normal; opacity: 0.85; }
+
+  /* ── Year section header (CRM subgrid header) ──────────── */
+  .year-block { border-bottom: 2px solid #c0c8d8; }
+  .year-header {
+    background: linear-gradient(180deg, #d8e4f4 0%, #b8ccec 100%);
+    border-bottom: 1px solid #88a8cc;
+    border-top: 2px solid #e8f0fa;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: default;
+    user-select: none;
+  }
+  .year-label {
+    font-weight: bold;
+    color: var(--crm-navy);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .year-label .expand-icon { font-size: 9px; color: #446688; }
+  .year-badge {
+    font-size: 10px;
+    color: #334;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ago-chip {
+    background: var(--crm-navy);
+    color: var(--crm-accent);
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── Tip card (CRM entity record row) ──────────────────── */
+  .tip-card {
+    background: white;
+    border-bottom: 1px solid var(--border-light);
+    overflow: hidden;
+  }
+  .tip-card:nth-child(even) { background: var(--row-alt); }
+
+  .tip-featured-img {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .tip-body { padding: 7px 10px 8px; }
+
+  .tip-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+  .tip-title a {
+    color: var(--crm-link);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .tip-title a:hover { color: #990000; }
+
+  .tip-meta {
+    font-size: 10px;
+    color: #666;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #e0e4ec;
+  }
+
+  /* ── Post content (rendered WordPress HTML) ─────────────── */
+  .tip-content {
+    font-size: 11px;
+    color: #1a1a1a;
+    line-height: 1.65;
+  }
+  .tip-content p { margin-bottom: 0.55rem; }
+  .tip-content p:last-child { margin-bottom: 0; }
+  .tip-content img { max-width: 100%; height: auto; margin: 4px 0; display: block; }
+  .tip-content a { color: var(--crm-link); }
+  .tip-content ul, .tip-content ol { margin: 0.3rem 0 0.55rem 1.4rem; }
+  .tip-content li { margin-bottom: 0.15rem; }
+  .tip-content pre {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10px;
+    background: #f4f4f4;
+    border: 1px solid #c8c8c8;
+    padding: 6px 8px;
+    overflow-x: auto;
+    margin: 0.4rem 0;
+  }
+  .tip-content code {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10px;
+    background: #f4f4f4;
+    border: 1px solid #c8c8c8;
+    padding: 0 3px;
+  }
+  .tip-content blockquote {
+    border-left: 3px solid var(--crm-blue);
+    margin: 0.4rem 0;
+    padding-left: 10px;
+    color: #555;
+    font-style: italic;
+  }
+  .tip-content h1, .tip-content h2, .tip-content h3 {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--crm-navy);
+    margin: 0.6rem 0 0.25rem;
+    border-bottom: 1px solid #c0c8e0;
+    padding-bottom: 2px;
+  }
+
+  /* ── Collapse / expand (classic ▶ / ▼) ─────────────────── */
+  details summary {
+    list-style: none;
+    cursor: default;
+    font-size: 10px;
+    color: var(--crm-link);
+    text-decoration: underline;
+    user-select: none;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: '▼ '; font-size: 7px; }
+  details:not([open]) summary::before { content: '▶ '; }
+  details[open] summary { display: block; margin-bottom: 6px; }
+
+  /* ── Notices ────────────────────────────────────────────── */
+  .error-note {
+    background: #ffffe0;
+    border: 1px solid #c8b000;
+    padding: 5px 10px;
+    font-size: 11px;
+    margin: 6px;
+    display: none;
+  }
+  #status {
+    padding: 24px 16px;
+    color: #555;
+    font-size: 11px;
+    text-align: center;
+  }
+  .dots::after {
+    content: '';
+    animation: ellipsis 1.4s steps(4, end) infinite;
+  }
+  @keyframes ellipsis {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+  }
+  #no-tips {
+    padding: 32px 16px;
+    color: #666;
+    text-align: center;
+    display: none;
+  }
+
+  /* ── Status bar ─────────────────────────────────────────── */
+  .status-bar {
+    background: var(--btn-face);
+    border-top: 1px solid var(--btn-sh);
+    padding: 2px 4px;
+    display: flex;
+    gap: 2px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .sb-panel {
+    border: 1px solid;
+    border-color: var(--btn-sh) var(--btn-hi) var(--btn-hi) var(--btn-sh);
+    padding: 1px 7px;
+    color: #333;
+  }
+  .sb-main { flex: 1; }
+  .sb-count { min-width: 90px; }
+  .sb-src { min-width: 130px; }
+
+  /* ── Responsive: hide nav on narrow screens ─────────────── */
+  @media (max-width: 560px) {
+    .nav-pane { display: none; }
+    body { padding: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-window">
+
+  <!-- Title bar -->
+  <div class="title-bar">
+    <div class="title-bar-left">
+      <span class="title-icon">🗓️</span>
+      <span>CRM Timehop of the Day — Microsoft Dynamics CRM Community Blog</span>
+    </div>
+    <div class="win-controls">
+      <div class="win-btn">_</div>
+      <div class="win-btn">&#9633;</div>
+      <div class="win-btn close">&#10005;</div>
+    </div>
+  </div>
+
+  <!-- Menu bar -->
+  <div class="menu-bar">
+    <div class="menu-item">File</div>
+    <div class="menu-item">Edit</div>
+    <div class="menu-item">View</div>
+    <div class="menu-item">Go To</div>
+    <div class="menu-item">Tools</div>
+    <div class="menu-item">Help</div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="tb-btn">⬅ Back</div>
+    <div class="tb-btn">➡ Forward</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" onclick="location.reload()">🔄 Refresh</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn">🖨 Print</div>
+    <div class="tb-btn">📧 E-mail a Link</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn"><a href="https://crmtipoftheday.com" target="_blank" style="color:inherit;text-decoration:none">🌐 Open Blog</a></div>
+    <div class="tb-right" id="header-date">Loading…</div>
+  </div>
+
+  <!-- Body -->
+  <div class="app-body">
+
+    <!-- Nav pane -->
+    <div class="nav-pane">
+      <div class="nav-section-title">Workplace</div>
+      <div class="nav-item active">📅&nbsp; Timehop</div>
+      <div class="nav-item">📋&nbsp; All Tips</div>
+      <div class="nav-item">⭐&nbsp; Favorites</div>
+      <div class="nav-item">🔍&nbsp; Search Tips</div>
+      <div class="nav-section-title">Resources</div>
+      <div class="nav-item">👥&nbsp; Community</div>
+      <div class="nav-item">📚&nbsp; Archive</div>
+      <div class="nav-item">🏷️&nbsp; Categories</div>
+      <div class="nav-spacer"></div>
+      <div class="nav-logo">CRM TIP<br>OF THE DAY<br>★ ★ ★</div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <div class="view-header">
+        <span>📅 On This Day — Tips from All Years</span>
+        <span class="view-subtitle" id="header-date-sub">Loading date…</span>
+      </div>
+
+      <div class="error-note" id="cors-note">
+        ⚠ Some years may not load due to browser CORS restrictions. Serve via GitHub Pages or a local web server rather than opening the file directly.
+      </div>
+
+      <div id="status"><span class="dots">Retrieving records from the CRM archives</span></div>
+      <div id="results"></div>
+      <div id="no-tips">No tips found for this date.<br>The CRM universe is quiet today — try again tomorrow.</div>
+
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="sb-panel sb-main" id="sb-msg">Ready</div>
+    <div class="sb-panel sb-count" id="sb-count"></div>
+    <div class="sb-panel sb-src">crmtipoftheday.com</div>
+  </div>
+
+</div>
+
+<script>
+const BLOG_URL = 'https://crmtipoftheday.com';
+const START_YEAR = 2011;
+
+function todayMonthDay() {
+  const d = new Date();
+  return {
+    month: String(d.getMonth() + 1).padStart(2, '0'),
+    day:   String(d.getDate()).padStart(2, '0'),
+    year:  d.getFullYear(),
+  };
+}
+
+function friendlyDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+}
+
+function featuredImageUrl(post) {
+  try { return post._embedded['wp:featuredmedia'][0].source_url || null; }
+  catch { return null; }
+}
+
+async function fetchTipsForYear(year, month, day) {
+  const after  = `${year}-${month}-${day}T00:00:00`;
+  const before = `${year}-${month}-${day}T23:59:59`;
+  const url = `${BLOG_URL}/wp-json/wp/v2/posts?after=${after}&before=${before}&per_page=20&_embed=wp:featuredmedia`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+function yearsAgoLabel(year, now) {
+  const d = now - year;
+  if (d === 0) return 'This year';
+  if (d === 1) return '1 year ago';
+  return `${d} years ago`;
+}
+
+function renderPost(post) {
+  const title   = post.title?.rendered  || 'Untitled';
+  const content = post.content?.rendered || '';
+  const date    = friendlyDate(post.date);
+  const link    = post.link;
+  const imgUrl  = featuredImageUrl(post);
+
+  return `
+    <div class="tip-card">
+      ${imgUrl ? `<img class="tip-featured-img" src="${imgUrl}" alt="" loading="lazy">` : ''}
+      <div class="tip-body">
+        <div class="tip-title"><a href="${link}" target="_blank">${title}</a></div>
+        <div class="tip-meta">Posted: ${date} &nbsp;|&nbsp; <a href="${link}" target="_blank" style="color:#666">View original ↗</a></div>
+        ${content ? `
+        <details open>
+          <summary>Collapse post content</summary>
+          <div class="tip-content">${content}</div>
+        </details>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderYearBlock(year, posts, now) {
+  const label = yearsAgoLabel(year, now);
+  const count = posts.length;
+  return `
+    <div class="year-block">
+      <div class="year-header">
+        <div class="year-label">
+          <span class="expand-icon">▼</span>
+          <strong>${year}</strong> — Tips from this date
+        </div>
+        <div class="year-badge">
+          <span>${count} tip${count !== 1 ? 's' : ''}</span>
+          <span class="ago-chip">${label}</span>
+        </div>
+      </div>
+      ${posts.map(renderPost).join('')}
+    </div>`;
+}
+
+async function main() {
+  const { month, day, year: now } = todayMonthDay();
+
+  const sample = new Date(`${now}-${month}-${day}T12:00:00`);
+  const dateStr = sample.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('header-date').textContent    = dateStr;
+  document.getElementById('header-date-sub').textContent = `${dateStr} — records across all years`;
+
+  const years   = Array.from({ length: now - START_YEAR + 1 }, (_, i) => now - i);
+  const results = await Promise.allSettled(years.map(y => fetchTipsForYear(y, month, day)));
+
+  document.getElementById('status').style.display = 'none';
+
+  let total = 0;
+  let corsErr = false;
+  const container = document.getElementById('results');
+
+  results.forEach((r, i) => {
+    const year = years[i];
+    if (r.status === 'fulfilled' && r.value.length > 0) {
+      container.insertAdjacentHTML('beforeend', renderYearBlock(year, r.value, now));
+      total += r.value.length;
+    } else if (r.status === 'rejected') {
+      corsErr = true;
+    }
+  });
+
+  if (corsErr) document.getElementById('cors-note').style.display = 'block';
+  if (total === 0) document.getElementById('no-tips').style.display = 'block';
+
+  document.getElementById('sb-msg').textContent   = total > 0 ? `${total} record${total !== 1 ? 's' : ''} retrieved` : 'No records found for this date';
+  document.getElementById('sb-count').textContent = total > 0 ? `${total} of ${total}` : '0 records';
+}
+
+main().catch(err => {
+  document.getElementById('status').textContent = 'Error: failed to retrieve records. See browser console for details.';
+  console.error(err);
+});
+</script>
+
+</body>
+</html>
