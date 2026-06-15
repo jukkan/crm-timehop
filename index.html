@@ -114,11 +114,17 @@
     font-family: inherit;
     display: flex; align-items: center; gap: 4px;
     white-space: nowrap;
+    user-select: none;
   }
-  .tb-btn:hover {
+  .tb-btn:not(.disabled):hover {
     background: var(--win-bg);
     border-color: var(--btn-sh) var(--btn-hi) var(--btn-hi) var(--btn-sh);
   }
+  .tb-btn:not(.disabled):active {
+    background: var(--btn-face);
+    border-color: var(--btn-dk) var(--btn-hi) var(--btn-hi) var(--btn-dk);
+  }
+  .tb-btn.disabled { color: #a0a0a0; cursor: default; }
   .tb-sep { width: 1px; height: 20px; background: var(--btn-sh); margin: 0 3px; }
   .tb-right { margin-left: auto; font-size: 10px; color: #555; padding-right: 4px; }
 
@@ -428,10 +434,11 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="tb-btn">⬅ Back</div>
-    <div class="tb-btn">➡ Forward</div>
+    <div class="tb-btn" id="btn-back"    onclick="changeDay(-1)">⬅ Back</div>
+    <div class="tb-btn disabled" id="btn-forward" onclick="changeDay(1)">➡ Forward</div>
+    <div class="tb-btn disabled" id="btn-today"   onclick="goToday()">🏠 Today</div>
     <div class="tb-sep"></div>
-    <div class="tb-btn" onclick="location.reload()">🔄 Refresh</div>
+    <div class="tb-btn" onclick="loadDate()">🔄 Refresh</div>
     <div class="tb-sep"></div>
     <div class="tb-btn">🖨 Print</div>
     <div class="tb-btn">📧 E-mail a Link</div>
@@ -487,11 +494,22 @@
 </div>
 
 <script>
-const BLOG_URL = 'https://crmtipoftheday.com';
+const BLOG_URL   = 'https://crmtipoftheday.com';
 const START_YEAR = 2011;
+const TODAY      = new Date();
+TODAY.setHours(0, 0, 0, 0);
 
-function todayMonthDay() {
-  const d = new Date();
+let offset = 0; // days from today; 0 = today, -1 = yesterday, etc.
+
+// ── Date helpers ────────────────────────────────────────────
+
+function dateForOffset(n) {
+  const d = new Date(TODAY);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function dateParts(d) {
   return {
     month: String(d.getMonth() + 1).padStart(2, '0'),
     day:   String(d.getDate()).padStart(2, '0'),
@@ -505,10 +523,42 @@ function friendlyDate(iso) {
   });
 }
 
-function featuredImageUrl(post) {
-  try { return post._embedded['wp:featuredmedia'][0].source_url || null; }
-  catch { return null; }
+function shortDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
+
+function yearsAgoLabel(postYear) {
+  // Always relative to today's year — "5 years ago" means 5 years before now
+  const diff = TODAY.getFullYear() - postYear;
+  if (diff === 0) return 'This year';
+  if (diff === 1) return '1 year ago';
+  return `${diff} years ago`;
+}
+
+// ── Navigation ──────────────────────────────────────────────
+
+function changeDay(delta) {
+  const next = offset + delta;
+  if (next > 0) return;          // can't go into the future
+  offset = next;
+  loadDate();
+}
+
+function goToday() {
+  if (offset === 0) return;
+  offset = 0;
+  loadDate();
+}
+
+function updateNavButtons() {
+  const btnFwd   = document.getElementById('btn-forward');
+  const btnToday = document.getElementById('btn-today');
+  const isToday  = offset === 0;
+  btnFwd.classList.toggle('disabled', isToday);
+  btnToday.classList.toggle('disabled', isToday);
+}
+
+// ── Fetch ───────────────────────────────────────────────────
 
 async function fetchTipsForYear(year, month, day) {
   const after  = `${year}-${month}-${day}T00:00:00`;
@@ -519,11 +569,11 @@ async function fetchTipsForYear(year, month, day) {
   return res.json();
 }
 
-function yearsAgoLabel(year, now) {
-  const d = now - year;
-  if (d === 0) return 'This year';
-  if (d === 1) return '1 year ago';
-  return `${d} years ago`;
+// ── Rendering ───────────────────────────────────────────────
+
+function featuredImageUrl(post) {
+  try { return post._embedded['wp:featuredmedia'][0].source_url || null; }
+  catch { return null; }
 }
 
 function renderPost(post) {
@@ -548,8 +598,8 @@ function renderPost(post) {
     </div>`;
 }
 
-function renderYearBlock(year, posts, now) {
-  const label = yearsAgoLabel(year, now);
+function renderYearBlock(year, posts) {
+  const label = yearsAgoLabel(year);
   const count = posts.length;
   return `
     <div class="year-block">
@@ -567,27 +617,50 @@ function renderYearBlock(year, posts, now) {
     </div>`;
 }
 
-async function main() {
-  const { month, day, year: now } = todayMonthDay();
+// ── Main load ───────────────────────────────────────────────
 
-  const sample = new Date(`${now}-${month}-${day}T12:00:00`);
-  const dateStr = sample.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  document.getElementById('header-date').textContent    = dateStr;
-  document.getElementById('header-date-sub').textContent = `${dateStr} — records across all years`;
+async function loadDate() {
+  const viewDate = dateForOffset(offset);
+  const { month, day, year } = dateParts(viewDate);
+  const dateStr  = shortDate(viewDate);
+  const isToday  = offset === 0;
 
-  const years   = Array.from({ length: now - START_YEAR + 1 }, (_, i) => now - i);
-  const results = await Promise.allSettled(years.map(y => fetchTipsForYear(y, month, day)));
+  // Update all labels
+  const viewLabel = isToday ? `On This Day — ${dateStr}` : dateStr;
+  document.getElementById('header-date').textContent      = isToday ? dateStr : `◀ ${dateStr}`;
+  document.getElementById('header-date-sub').textContent  = `${dateStr} — records across all years`;
+  document.querySelector('.view-header span:first-child').textContent =
+    `📅 ${viewLabel} — Tips from All Years`;
+  document.title = isToday
+    ? 'CRM Timehop of the Day'
+    : `CRM Timehop — ${dateStr}`;
 
-  document.getElementById('status').style.display = 'none';
+  updateNavButtons();
 
-  let total = 0;
-  let corsErr = false;
+  // Reset content area
   const container = document.getElementById('results');
+  container.innerHTML = '';
+  document.getElementById('no-tips').style.display    = 'none';
+  document.getElementById('cors-note').style.display  = 'none';
+  document.getElementById('sb-msg').textContent       = 'Retrieving records…';
+  document.getElementById('sb-count').textContent     = '';
+  const statusEl = document.getElementById('status');
+  statusEl.innerHTML = '<span class="dots">Retrieving records from the CRM archives</span>';
+  statusEl.style.display = 'block';
+
+  // Fetch all years in parallel
+  const currentYear = TODAY.getFullYear();
+  const years       = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => currentYear - i);
+  const results     = await Promise.allSettled(years.map(y => fetchTipsForYear(y, month, day)));
+
+  statusEl.style.display = 'none';
+
+  let total    = 0;
+  let corsErr  = false;
 
   results.forEach((r, i) => {
-    const year = years[i];
     if (r.status === 'fulfilled' && r.value.length > 0) {
-      container.insertAdjacentHTML('beforeend', renderYearBlock(year, r.value, now));
+      container.insertAdjacentHTML('beforeend', renderYearBlock(years[i], r.value));
       total += r.value.length;
     } else if (r.status === 'rejected') {
       corsErr = true;
@@ -597,11 +670,13 @@ async function main() {
   if (corsErr) document.getElementById('cors-note').style.display = 'block';
   if (total === 0) document.getElementById('no-tips').style.display = 'block';
 
-  document.getElementById('sb-msg').textContent   = total > 0 ? `${total} record${total !== 1 ? 's' : ''} retrieved` : 'No records found for this date';
+  document.getElementById('sb-msg').textContent   = total > 0
+    ? `${total} record${total !== 1 ? 's' : ''} retrieved`
+    : 'No records found for this date';
   document.getElementById('sb-count').textContent = total > 0 ? `${total} of ${total}` : '0 records';
 }
 
-main().catch(err => {
+loadDate().catch(err => {
   document.getElementById('status').textContent = 'Error: failed to retrieve records. See browser console for details.';
   console.error(err);
 });
